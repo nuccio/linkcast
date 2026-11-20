@@ -50,7 +50,18 @@
       "Bash(terraform apply*)",
       "Bash(terraform destroy*)",
       "Bash(terraform import*)",
-      "Bash(terraform state *)"
+      "Bash(terraform state *)",
+      "Bash(gcloud * enable*)",
+      "Bash(gcloud * replace*)",
+      "Bash(gcloud storage rm*)",
+      "Bash(gsutil rm*)",
+      "Bash(gsutil cp*)",
+      "Bash(bq rm*)",
+      "Bash(firebase *delete*)",
+      "Bash(gcloud config config-helper*)",
+      "Bash(gcloud auth login*)",
+      "Bash(gcloud auth application-default login*)",
+      "Read(**/.env.*)"
     ],
     "ask": [
       "Bash(gh release *)",
