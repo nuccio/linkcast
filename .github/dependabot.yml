@@ -1,0 +1,19 @@
+# Weekly version updates, grouped to keep the pull requests few. A new release
+# has to be 7 days old before it is proposed, which gives the community time to
+# spot a malicious one. Security updates are not held back by the cooldown.
+#
+# Only the GitHub Actions are covered for now: the repository has no Python
+# dependency file yet. The issue that adds pyproject.toml adds the pip (or uv)
+# entry here, with the same cooldown and grouping.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
