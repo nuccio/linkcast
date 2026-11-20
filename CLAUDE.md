@@ -45,6 +45,12 @@ The issue that adds the application code adds its commands here (install, run, t
 - work goes the normal way: one branch and one PR to `main` per change, following the "Workflow" section above, reviewed and merged by the maintainer. This holds for changes to the workflow itself too (decided by the maintainer on 2026-11-20);
 - the only exception is the rehearsal of #22, which the maintainer starts on purpose to test the workflow.
 
+These rules are in force from now, whatever the status of the workflow (decided by the maintainer on 2026-11-20):
+
+- **English** on GitHub and in the repository, as in "Language" above.
+- **Security check** on every change to code or configuration (`.claude/`, `.github/`, dependency files, infrastructure, `.gitignore`, and anything that runs): before the PR is put to the maintainer, a session or subagent that did not write the change reads the whole diff and states its outcome in the PR. Details of a vulnerability reach the maintainer privately, as `SECURITY.md` says. A change only to `README.md` or other documentation needs no security check.
+- **Consistent project memory and documentation**: the same PR that changes behaviour, configuration or rules brings `CLAUDE.md`, `README.md`, `docs/` and the project memory in line with it, so that no documentation debt builds up.
+
 Once in force, a session follows `docs/maintainer-agent-workflow.md` when its preset sets `AGENT_ROLE`. The roles, scope, merge conditions and stop conditions are there. The maintainer takes part only at the issue approval, the design approval and the final PR to `main`.
 
 - A coordinator works alone inside its scope, one approved issue plus its sub-issues: `gh pr merge` and `gh pr review` are not under `ask`. Permission patterns cannot tell a PR's base branch apart, so "a coordinator never approves or merges a PR to `main`" is a written rule.
