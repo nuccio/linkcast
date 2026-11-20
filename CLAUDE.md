@@ -41,8 +41,8 @@ The issue that adds the application code adds its commands here (install, run, t
 
 **Status: work in progress, not in force.** The rules of `docs/maintainer-agent-workflow.md` and of this section are not applied yet, by any session, with or without `AGENT_ROLE`. They come into force only when the maintainer declares a first satisfactory version: every configuration is complete and tested, both the repository files and the owner's manual steps (#21), and the check after setup has passed (#22). The maintainer records that declaration in a comment on #2, and a PR removes this paragraph. Until then:
 
-- no coordinator session is started and no issue is run through the workflow (no `approved` label as a start signal, no issue branches, no sub-issues created by an agent);
-- changes, including those to the workflow itself, follow the "Workflow" section above and are reviewed by the maintainer;
+- there are no coordinator or worker roles: no session is started from a role preset, and no issue is run through the workflow (no `approved` label as a start signal, no issue branches, no sub-issues created by an agent);
+- work goes the normal way: one branch and one PR to `main` per change, following the "Workflow" section above, reviewed and merged by the maintainer. This holds for changes to the workflow itself too (decided by the maintainer on 2026-11-20);
 - the only exception is the rehearsal of #22, which the maintainer starts on purpose to test the workflow.
 
 Once in force, a session follows `docs/maintainer-agent-workflow.md` when its preset sets `AGENT_ROLE`. The roles, scope, merge conditions and stop conditions are there. The maintainer takes part only at the issue approval, the design approval and the final PR to `main`.
