@@ -1,0 +1,34 @@
+# Runs on every pull request, on every push to main, and on demand.
+# Required checks (see docs/maintainer-agent-workflow.md, "Repository
+# configuration"): "Repository checks". The issue that adds the application
+# code adds its jobs here and to that list.
+#
+# Actions are pinned to full commit SHAs; the comment next to each one is the
+# version it corresponds to. Only GitHub-owned actions are used.
+
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install pytest
+      - name: Run repository checks
+        run: python -m pytest tests
