@@ -39,7 +39,13 @@ The issue that adds the application code adds its commands here (install, run, t
 
 ## Agent workflow
 
-A session follows `docs/maintainer-agent-workflow.md` when its preset sets `AGENT_ROLE`. The roles, scope, merge conditions and stop conditions are there. The maintainer takes part only at the issue approval, the design approval and the final PR to `main`.
+**Status: work in progress, not in force.** The rules of `docs/maintainer-agent-workflow.md` and of this section are not applied yet, by any session, with or without `AGENT_ROLE`. They come into force only when the maintainer declares a first satisfactory version: every configuration is complete and tested, both the repository files and the owner's manual steps (#21), and the check after setup has passed (#22). The maintainer records that declaration in a comment on #2, and a PR removes this paragraph. Until then:
+
+- no coordinator session is started and no issue is run through the workflow (no `approved` label as a start signal, no issue branches, no sub-issues created by an agent);
+- changes, including those to the workflow itself, follow the "Workflow" section above and are reviewed by the maintainer;
+- the only exception is the rehearsal of #22, which the maintainer starts on purpose to test the workflow.
+
+Once in force, a session follows `docs/maintainer-agent-workflow.md` when its preset sets `AGENT_ROLE`. The roles, scope, merge conditions and stop conditions are there. The maintainer takes part only at the issue approval, the design approval and the final PR to `main`.
 
 - A coordinator works alone inside its scope, one approved issue plus its sub-issues: `gh pr merge` and `gh pr review` are not under `ask`. Permission patterns cannot tell a PR's base branch apart, so "a coordinator never approves or merges a PR to `main`" is a written rule.
 - Hard stops: the coordinator waits for the maintainer only for cloud costs, IAM, IAP, the API secret, the feed token and anything stored about the user, a change that drops or rewrites stored data, any change to the real GCP project, a new external service, a communication outside the repository, credentials, a departure from the approved design, a problem found by the security check, a used-up retry limit, or anything else the final PR cannot undo or that has effects outside the repository. Every other decision it takes itself and records for the final report ("Decisions taken without the maintainer"); in doubt whether a decision is a hard stop, it stops. Every hard stop sends an in-app notification and is recorded under "Interruptions".

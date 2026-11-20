@@ -1,5 +1,7 @@
 # Maintainer's agent workflow
 
+**Status: work in progress, not in force.** No session applies these rules until the maintainer declares a first satisfactory version, with every configuration complete and tested (#21, #22). See the "Agent workflow" section of [CLAUDE.md](../CLAUDE.md) for what applies until then.
+
 This file applies only to the Claude sessions of the maintainer. Other contributors are not bound by it: for them [CONTRIBUTING.md](../CONTRIBUTING.md) stays the reference.
 
 For those sessions, the [branch model](#branches) below replaces "one branch per issue, PR against `main`".
