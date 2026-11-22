@@ -9,3 +9,4 @@ The project is at the start: the backlog is in the [issues](https://github.com/n
 - How a change gets to `main`: [CONTRIBUTING.md](CONTRIBUTING.md).
 - Security policy: [SECURITY.md](SECURITY.md).
 - Rules of the maintainer's Claude sessions: [docs/maintainer-agent-workflow.md](docs/maintainer-agent-workflow.md).
+- The GCP project and what is still to be set up in it: [docs/gcp-project.md](docs/gcp-project.md).
