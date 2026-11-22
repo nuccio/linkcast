@@ -2,8 +2,8 @@
 
 The rules of the agent sessions live in ``docs/maintainer-agent-workflow.md``
 and are summarised in ``CLAUDE.md``. These checks keep the internal links of
-the document working, the rule on issues that declare no design present in
-both files, and the rules that keep routine GitHub steps free of permission
+the document working, the rules on issues that declare no design and on
+issues as the complete input present in both files, and the rules that keep routine GitHub steps free of permission
 prompts in the document.
 """
 
@@ -139,3 +139,26 @@ def test_settings_keep_ask_on_gh_api_writes_and_have_no_allow():
     assert "allow" not in permissions or not permissions["allow"]
     for entry in ("Bash(gh api -X*)", "Bash(gh api graphql*)"):
         assert entry in permissions["ask"]
+
+
+COMPLETE_INPUT_HEADING = "Issues are the complete input"
+
+
+def test_workflow_doc_defines_issues_as_the_complete_input():
+    text = WORKFLOW_DOC.read_text(encoding="utf-8")
+    assert COMPLETE_INPUT_HEADING in headings(text)
+    rule = section(text, COMPLETE_INPUT_HEADING)
+    for required in (
+        "never open the maintainer's concept document",
+        "do not ask about it and do not look it up",
+        "Referenced decisions to confirm",
+        "what the design assumed",
+        "hard stop",
+    ):
+        assert required in rule, f"the section does not mention {required!r}"
+
+
+def test_claude_md_points_to_the_complete_input_rule():
+    text = CLAUDE_MD.read_text(encoding="utf-8")
+    assert "Referenced decisions to confirm" in text
+    assert f'"{COMPLETE_INPUT_HEADING}"' in text

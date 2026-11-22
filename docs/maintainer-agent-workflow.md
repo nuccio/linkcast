@@ -102,6 +102,12 @@ Before it starts a worker, the coordinator checks that every declaration above i
 
 Issues that need a design are not affected: they keep the design sub-issue and its approval.
 
+### Issues are the complete input
+
+An issue is the complete input of the work. Agents never open the maintainer's concept document. A decision, constraint, criterion or open-point code (`D…`, `V…`, `PA…`, a criterion number) that an issue cites without its text is not an input: the coordinator and the workers do not ask about it and do not look it up.
+
+The design lists every such code under **Referenced decisions to confirm**, with what the design assumed about it. The maintainer confirms or corrects these assumptions when approving the design. An [issue that declares no design](#issues-that-declare-no-design) cites no code without its text: if it does, that is a departure from the approved issue, and so a [hard stop](#rules).
+
 ## Branches
 
 - Each approved issue on the full path has one branch, `issue/<N>/base`, created from `main` once the design is approved. Nothing is committed on it directly: every change arrives through a PR. The small-issue path has no issue branch.
