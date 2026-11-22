@@ -35,6 +35,7 @@ The issue that adds the application code adds its commands here (install, run, t
 
 - One branch per issue from `main`; PR against `main` with `Fixes #N`; squash and merge. Commits must be signed. Details in `CONTRIBUTING.md`. Sessions whose preset sets `AGENT_ROLE` use the branch model of `docs/maintainer-agent-workflow.md` instead.
 - In the maintainer's sessions, check the identity before pushing: `gh api user --jq .login` (or `get_me` of the GitHub MCP tools where `gh` is not installed) must print `$AGENT_GH_LOGIN`. Without that variable, or on a mismatch, the session has no role and does not push, approve or merge.
+- Issues and PR descriptions that list steps or acceptance criteria write them as task-list checkboxes (`- [ ]`), so the maintainer can tick off where they are. Only the maintainer ticks the boxes of an issue body: a session never edits the body of an issue to tick a box (an edit after the `approved` label voids the approval), and reports progress in a comment instead. A session ticks boxes only in the description of a PR it opened. A ticked box is never an approval or a start signal.
 - Don't push, merge or touch `main` without an explicit request. A coordinator's scope, given by the maintainer, is the explicit request for merging inside that scope, and only for that.
 
 ## Agent workflow
