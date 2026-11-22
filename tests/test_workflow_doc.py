@@ -163,3 +163,10 @@ def test_claude_md_points_to_the_complete_input_rule():
     text = CLAUDE_MD.read_text(encoding="utf-8")
     assert "Referenced decisions to confirm" in text
     assert f'"{COMPLETE_INPUT_HEADING}"' in text
+
+
+def test_workflow_is_in_force_in_both_files():
+    for path in (WORKFLOW_DOC, CLAUDE_MD):
+        text = path.read_text(encoding="utf-8")
+        assert "**Status: in force since 2026-11-22**" in text, path.name
+        assert "not in force" not in text, path.name
