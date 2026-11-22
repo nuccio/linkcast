@@ -3,8 +3,8 @@
 The rules of the agent sessions live in ``docs/maintainer-agent-workflow.md``
 and are summarised in ``CLAUDE.md``. These checks keep the internal links of
 the document working, the rules on issues that declare no design and on
-issues as the complete input present in both files, and the rules that keep routine GitHub steps free of permission
-prompts in the document.
+issues as the complete input present in both files, and the rules that keep
+routine GitHub steps free of permission prompts in the document.
 """
 
 import json
@@ -153,6 +153,7 @@ def test_workflow_doc_defines_issues_as_the_complete_input():
         "do not ask about it and do not look it up",
         "Referenced decisions to confirm",
         "what the design assumed",
+        "does not list there",
         "hard stop",
     ):
         assert required in rule, f"the section does not mention {required!r}"
