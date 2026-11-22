@@ -2,10 +2,12 @@
 
 The rules of the agent sessions live in ``docs/maintainer-agent-workflow.md``
 and are summarised in ``CLAUDE.md``. These checks keep the internal links of
-the document working and the rule on issues that declare no design present in
-both files.
+the document working, the rule on issues that declare no design present in
+both files, and the rules that keep routine GitHub steps free of permission
+prompts in the document.
 """
 
+import json
 import re
 from pathlib import Path
 
@@ -75,3 +77,65 @@ def test_claude_md_points_to_the_no_design_rule():
     text = CLAUDE_MD.read_text(encoding="utf-8")
     assert "declare that no design is needed" in text
     assert f'"{NO_DESIGN_HEADING}"' in text
+
+
+def section(text: str, heading: str) -> str:
+    """Return the body of a ``###`` section, up to the next heading of level 2 or 3."""
+    body = text.split(f"### {heading}\n", 1)[1]
+    return re.split(r"\n#{2,3} ", body, maxsplit=1)[0]
+
+
+def test_routine_github_steps_use_gh_subcommands():
+    text = WORKFLOW_DOC.read_text(encoding="utf-8")
+    assert "GitHub commands" in headings(text)
+    commands = section(text, "GitHub commands")
+    for required in (
+        "gh issue create --parent",
+        "gh issue comment",
+        "gh issue edit <N> --add-label",
+        "gh issue edit <N> --remove-label",
+        "gh pr create",
+        "gh pr edit",
+        "gh pr comment",
+        "gh pr review",
+        "gh pr merge",
+        "never a write form of `gh api`",
+        "No `allow` entry",
+        "read:org",
+    ):
+        assert required in commands, f"the section does not mention {required!r}"
+
+
+def test_approval_check_names_its_one_expected_prompt():
+    text = WORKFLOW_DOC.read_text(encoding="utf-8")
+    check = section(text, "Checking an approval")
+    assert "gh issue view <N> --json updatedAt" in check
+    assert "lastEditedAt" in check
+    assert "one expected permission prompt" in check
+
+
+def test_both_role_tokens_have_read_org():
+    text = WORKFLOW_DOC.read_text(encoding="utf-8")
+    token_step = next(
+        line for line in text.splitlines()
+        if line.startswith("2. Create a classic personal access token")
+    )
+    assert "`read:org` on both" in token_step
+    assert "ok token has read:org" in text
+
+
+def test_final_report_lists_every_permission_prompt():
+    text = WORKFLOW_DOC.read_text(encoding="utf-8")
+    assert "Each permission prompt is listed on its own" in text
+    assert "known gap" in text
+    assert "Starting a worker" in headings(text)
+
+
+def test_settings_keep_ask_on_gh_api_writes_and_have_no_allow():
+    settings = json.loads(
+        (REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
+    )
+    permissions = settings["permissions"]
+    assert "allow" not in permissions or not permissions["allow"]
+    for entry in ("Bash(gh api -X*)", "Bash(gh api graphql*)"):
+        assert entry in permissions["ask"]
