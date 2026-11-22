@@ -310,7 +310,7 @@ Never commit the token, the keys or the config file.
 
 Sessions use `gh` and `git`, or the GitHub MCP tools in cloud sessions where `gh` is not installed. Unlike google-chat-mcp, `mcp__github` is not under `deny` here, because it would also block the cloud sessions of this repository. In both cases the identity check above applies.
 
-In the sessions started from the app on the maintainer's Mac, the app's `github` MCP server carries a placeholder token on purpose (step 3 of [The owner's own set-up](#the-owners-own-set-up)), so its tools answer "Bad credentials" in every session, presets included. That is expected: those sessions use `gh`. A "Bad credentials" error from the GitHub MCP tools in such a session is not a fault of the preset or of the role token.
+In the sessions started from the app on the maintainer's Mac, the app's `github` MCP server carries a placeholder token on purpose (step 3 of [The owner's own set-up](#the-owners-own-set-up)), so its tools answer "Bad credentials" in every session, presets included. That is expected: those sessions use `gh`. A "Bad credentials" error from the GitHub MCP tools in such a session is not a fault of the preset or of the role token. A session never edits the app's MCP configuration or puts a token in it; the fix, if one is ever needed, is the owner's (step 3).
 
 ### The owner's own set-up
 
