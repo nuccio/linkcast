@@ -77,6 +77,8 @@ def test_design_choices_are_stated():
         "$5",
         "50% actual, 90% actual, 100% actual and 100% forecasted",
         "roles/datastore.user",
+        "cloudtrace.googleapis.com",
+        "### Keep Cloud Trace off",
         "--max-instances=1",
         "## Teardown",
     ):
