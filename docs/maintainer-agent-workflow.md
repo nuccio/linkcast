@@ -348,7 +348,14 @@ First group, under the conditions of the [protected areas](#rules) rule:
 - `.gitignore`, `.env.example`: what keeps credentials out of the repository;
 - `tests/test_repository_language.py`: the guard of the English-only rule.
 
-The repository has no application code yet. The approved design of the issue that creates code in one of the areas above names its paths, and its final PR adds them to this list. Until a path is listed, the area is still protected: the design declares it by its description.
+Paths of the first group named by an approved design (added by the final PR of #1):
+
+- `src/linkcast/token.py`, `tests/app/test_token.py`, `tests/app/test_routes.py`: the check of the feed token and the tests that enforce it;
+- `src/linkcast/storage.py`, `tests/app/test_storage.py`: the code that reads Cloud Storage;
+- `infra/`, `Dockerfile`, `.dockerignore`: the runbook and the container;
+- `pyproject.toml`, `uv.lock`, `.env.example`: dependencies and configuration template.
+
+The approved design of an issue that creates code in one of the areas above names its paths, and its final PR adds them to this list. Until a path is listed, the area is still protected: the design declares it by its description.
 
 Second group, only through the final PR:
 
@@ -409,8 +416,9 @@ These are manual steps for the repository owner: sessions never change them. The
 The checks are named after the jobs of `.github/workflows/tests.yml`. All three rulesets require the same ones:
 
 - `Repository checks`
+- `Service tests`
 
-The repository has no application code yet, so there is one check. The issue that adds the code, its tests or a linter adds the jobs to `tests.yml` and to this list in its final PR, and the owner adds them to the three rulesets once that PR is merged.
+`Service tests` runs the tests of the feed service (`tests/app`). The issue that adds a linter or other tests adds the jobs to `tests.yml` and to this list in its final PR, and the owner adds them to the three rulesets once that PR is merged.
 
 ### Rulesets
 
