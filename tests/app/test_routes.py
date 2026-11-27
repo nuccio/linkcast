@@ -135,6 +135,6 @@ def test_one_log_line_per_request_without_path_or_token(client, caplog):
 
 def test_log_line_survives_odd_user_agent(client, caplog):
     caplog.set_level(logging.INFO, logger="linkcast")
-    client.get(FEED, headers={"User-Agent": "bad\x01agenté" + "x" * 500})
+    client.get(FEED, headers={"User-Agent": "bad\x01agent\N{LATIN SMALL LETTER E WITH ACUTE}" + "x" * 500})
     line = caplog.records[-1].getMessage()
     assert "\n" not in line and len(line) < 400

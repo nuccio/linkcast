@@ -27,7 +27,7 @@ def test_matches_only_the_same_token():
 
 
 def test_non_ascii_candidate_does_not_raise():
-    assert not token_matches("é" * 40, "a" * 40)
+    assert not token_matches("\N{LATIN SMALL LETTER E WITH ACUTE}" * 40, "a" * 40)
 
 
 def test_service_refuses_to_start_with_a_short_token():
