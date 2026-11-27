@@ -51,6 +51,22 @@ def _not_found() -> Response:
     return Response("Not Found\n", status=404, mimetype="text/plain")
 
 
+class _App(Flask):
+    """Flask whose error log never contains the request path (it holds the token)."""
+
+    def log_exception(self, exc_info):
+        route = request.endpoint if request.endpoint in ("feed", "episode") else "other"
+        logger.error("error route=%s exception=%s", route, exc_info[0].__name__)
+
+
+def _guarded(chunks, route: str):
+    """Yield the chunks; if reading fails, log without path or token and stop."""
+    try:
+        yield from chunks
+    except Exception as error:
+        logger.error("error route=%s exception=%s", route, type(error).__name__)
+
+
 def create_app(config: Config | None = None, storage: AudioStorage | None = None) -> Flask:
     """Create the application; ``config`` and ``storage`` are injected by the tests."""
     config = config or Config.from_env()
@@ -61,19 +77,21 @@ def create_app(config: Config | None = None, storage: AudioStorage | None = None
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
 
-    app = Flask(__name__)
+    app = _App(__name__)
 
     def authorized(token: str) -> bool:
         return token_matches(token, config.feed_token)
 
-    @app.get("/feed/<token>/feed.xml", endpoint="feed")
+    @app.get("/feed/<token>/feed.xml", endpoint="feed", provide_automatic_options=False)
     def feed(token: str):
         if not authorized(token):
             return _not_found()
         body = build_feed(storage.list_episodes(), f"https://{request.host}", token)
         return Response(body, mimetype="application/rss+xml")
 
-    @app.get("/feed/<token>/episodes/<name>.mp3", endpoint="episode")
+    @app.get(
+        "/feed/<token>/episodes/<name>.mp3", endpoint="episode", provide_automatic_options=False
+    )
     def episode(token: str, name: str):
         if not authorized(token) or not is_valid_name(name):
             return _not_found()
@@ -95,7 +113,7 @@ def create_app(config: Config | None = None, storage: AudioStorage | None = None
         if request.method == "HEAD" or size == 0:
             return Response(status=status, mimetype="audio/mpeg", headers=headers)
         return Response(
-            storage.iter_range(name, start, end),
+            _guarded(storage.iter_range(name, start, end), "episode"),
             status=status,
             mimetype="audio/mpeg",
             headers=headers,
@@ -104,6 +122,10 @@ def create_app(config: Config | None = None, storage: AudioStorage | None = None
 
     # Every other address, and a method other than GET or HEAD on a valid
     # one, gets the same 404, so nothing tells a stranger the address exists.
+    @app.errorhandler(500)
+    def server_error(_error):
+        return Response("Internal Server Error\n", status=500, mimetype="text/plain")
+
     @app.errorhandler(404)
     @app.errorhandler(405)
     def not_found(_error):
