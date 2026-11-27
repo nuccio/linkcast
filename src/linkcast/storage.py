@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 # Object names served to the podcast app: a plain file name, no slashes.
-_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _EXTENSION = ".mp3"
 CHUNK_SIZE = 1024 * 1024
 
@@ -21,7 +21,7 @@ class Episode:
 
 
 def is_valid_name(name: str) -> bool:
-    return bool(_NAME_RE.match(name)) and ".." not in name
+    return bool(_NAME_RE.fullmatch(name)) and ".." not in name
 
 
 class AudioStorage:

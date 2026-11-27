@@ -70,8 +70,8 @@ def test_missing_episode_is_404(client):
 @pytest.mark.parametrize(
     "path",
     [
-        f"/feed/wrong-token/feed.xml",
-        f"/feed/wrong-token/episodes/test-episode.mp3",
+        "/feed/wrong-token/feed.xml",
+        "/feed/wrong-token/episodes/test-episode.mp3",
         "/feed/feed.xml",
         "/feed//feed.xml",
         "/feed/episodes/test-episode.mp3",
@@ -82,6 +82,7 @@ def test_missing_episode_is_404(client):
         f"/feed/{TOKEN}/episodes/",
         f"/feed/{TOKEN}/episodes/..%2Ftest-episode.mp3",
         "/robots.txt",
+        "/static/x",
     ],
 )
 def test_every_other_address_gives_the_same_404(client, path):
@@ -89,14 +90,20 @@ def test_every_other_address_gives_the_same_404(client, path):
     response = client.get(path)
     assert response.status_code == 404
     assert response.data == reference.data
-    assert response.mimetype == reference.mimetype
+    assert dict(response.headers) == dict(reference.headers)
 
 
-def test_wrong_method_on_a_valid_address_is_the_same_404(client):
+@pytest.mark.parametrize(
+    "path", [FEED, EPISODE, "/feed/wrong/feed.xml", "/nothing-here", "/static/x"]
+)
+@pytest.mark.parametrize("method", ["post", "put", "delete", "patch", "options"])
+def test_other_methods_give_the_same_404(client, path, method):
     reference = client.get("/nothing-here")
-    response = client.post(FEED)
+    response = getattr(client, method)(path)
     assert response.status_code == 404
     assert response.data == reference.data
+    assert dict(response.headers) == dict(reference.headers)
+    assert "Allow" not in response.headers
 
 
 def test_wrong_token_does_not_touch_the_bucket(bucket):
@@ -138,3 +145,74 @@ def test_log_line_survives_odd_user_agent(client, caplog):
     client.get(FEED, headers={"User-Agent": "bad\x01agent\N{LATIN SMALL LETTER E WITH ACUTE}" + "x" * 500})
     line = caplog.records[-1].getMessage()
     assert "\n" not in line and len(line) < 400
+
+
+def _client_with(bucket, **attrs):
+    from linkcast.app import Config, create_app
+    from linkcast.storage import AudioStorage
+
+    cls = type("Broken", (AudioStorage,), attrs)
+    config = Config(feed_token=TOKEN, audio_bucket="b")
+    return create_app(config, cls(bucket, "test/")).test_client()
+
+
+def _boom(*_args, **_kwargs):
+    raise RuntimeError(f"failure for /feed/{TOKEN}/feed.xml")
+
+
+def _assert_clean(caplog, response):
+    everything = caplog.text + response.get_data(as_text=True)
+    assert TOKEN not in everything
+    assert "/feed/" not in everything
+    assert "RuntimeError" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "attr, path",
+    [("list_episodes", FEED), ("get_size", EPISODE)],
+)
+def test_storage_error_logs_no_path_or_token(bucket, caplog, attr, path):
+    caplog.set_level(logging.INFO)
+    client = _client_with(bucket, **{attr: _boom})
+    response = client.get(path)
+    assert response.status_code == 500
+    _assert_clean(caplog, response)
+
+
+def test_error_while_streaming_logs_no_path_or_token(bucket, caplog, monkeypatch):
+    from linkcast.storage import AudioStorage
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr("linkcast.storage.CHUNK_SIZE", 100)
+    calls = []
+
+    def flaky(self, name, start, end):
+        calls.append(start)
+        if len(calls) > 1:
+            raise RuntimeError(f"failure for /feed/{TOKEN}/episodes/{name}.mp3")
+        return b"x" * (end - start + 1)
+
+    client = _client_with(bucket, read_range=flaky)
+    response = client.get(EPISODE)
+    _assert_clean(caplog, response)
+    assert len(response.data) == 100
+
+
+def test_error_on_the_first_chunk_logs_no_path_or_token(bucket, caplog):
+    caplog.set_level(logging.INFO)
+
+    def broken(self, name, start, end):
+        raise RuntimeError(f"failure for /feed/{TOKEN}/episodes/{name}.mp3")
+
+    client = _client_with(bucket, read_range=broken)
+    response = client.get(EPISODE)
+    _assert_clean(caplog, response)
+    assert response.data == b""
+
+
+@pytest.mark.parametrize("path", ["/feed/wrong/feed.xml", "/nothing-here", "/static/x"])
+def test_head_on_a_wrong_address_gives_the_same_404_headers(client, path):
+    reference = client.get("/nothing-here")
+    response = client.head(path)
+    assert response.status_code == 404
+    assert dict(response.headers) == dict(reference.headers)

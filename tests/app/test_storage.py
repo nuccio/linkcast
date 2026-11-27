@@ -29,5 +29,5 @@ def test_iter_range_joins_chunks(bucket, monkeypatch):
 
 def test_name_validation():
     assert is_valid_name("test-episode")
-    for bad in ["", "a/b", "..", "a..b", ".hidden", "a b"]:
+    for bad in ["", "a/b", "..", "a..b", ".hidden", "a b", "ok\n"]:
         assert not is_valid_name(bad)
