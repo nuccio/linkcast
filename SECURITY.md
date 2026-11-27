@@ -28,7 +28,7 @@ Anyone with the API secret can add links, and so spend money up to the daily epi
 
 - Cloud Run's automatic request log records the full address, so the token. The runbook adds a Logging exclusion for that log of the service **before the first deploy**. If the exclusion was missed, regenerate the token.
 - Cloud Trace is kept off: trace spans carry the request URL. The runbook checks that the API is disabled before the deploy and again in the final checks.
-- The service writes its own log: route name, status, size and user agent, never the path or the token. The error logs of the application and of gunicorn have the segment after `/feed/` replaced, and the container runs without an access log.
+- The service writes its own log: route name, status, size and user agent, never the path or the token. The error logs of the application never contain the path (only the route name and the exception type), the error log of gunicorn has the segment after `/feed/` replaced, and the container runs without an access log.
 - Tests check that the token does not reach the logs.
 
 ## What protects the repository

@@ -21,7 +21,7 @@ The service reads these environment variables. A template with placeholders is i
 | `AUDIO_PREFIX` | Prefix of the episodes in the bucket. Default `test/`. |
 | `PORT` | Port to listen on. Set by Cloud Run; default 8080. |
 
-The service logs one line per request with the route name, the status, the size and the user agent. It never logs the path, the token or the text of an article. The error logs of the application and of gunicorn redact the segment after `/feed/`, and the container has no access log. The deployment also needs the Logging exclusion for the request log and Cloud Trace kept off; both are steps of the runbook.
+The service logs one line per request with the route name, the status, the size and the user agent. It never logs the path, the token or the text of an article. The error logs of the application never contain the path (only the route name and the exception type), the error log of gunicorn redacts the segment after `/feed/`, and the container has no access log. The deployment also needs the Logging exclusion for the request log and Cloud Trace kept off; both are steps of the runbook.
 
 ## Tests
 
