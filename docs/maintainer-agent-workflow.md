@@ -418,7 +418,7 @@ The checks are named after the jobs of `.github/workflows/tests.yml`. All three 
 - `Repository checks`
 - `Service tests`
 
-`Service tests` runs the tests of the feed service (`tests/app`). The issue that adds a linter or other tests adds the jobs to `tests.yml` and to this list in its final PR, and the owner adds them to the three rulesets once that PR is merged.
+`Service tests` runs the tests of the feed service (`tests/app`). The owner adds `Service tests` to the three rulesets once the final PR of #1 is merged. The issue that adds a linter or other tests adds the jobs to `tests.yml` and to this list in its final PR, and the owner adds them to the three rulesets once that PR is merged.
 
 ### Rulesets
 
