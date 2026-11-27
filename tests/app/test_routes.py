@@ -225,12 +225,50 @@ def test_head_on_a_wrong_address_gives_the_same_404_headers(client, path):
     assert dict(response.headers) == dict(reference.headers)
 
 
-def test_gunicorn_error_log_is_redacted(client, caplog):
+@pytest.mark.parametrize(
+    "message, expected",
+    [
+        (f"GET /feed/{TOKEN}/feed.xml", "GET /feed/<redacted>/feed.xml"),
+        (f"GET /feed/{TOKEN}", "GET /feed/<redacted>"),
+        (f"GET /FEED/{TOKEN}/", "GET /feed/<redacted>/"),
+        (f"GET /feed/{TOKEN}%2Fepisodes%2Fx.mp3", "GET /feed/<redacted>%2Fepisodes%2Fx.mp3"),
+        (f"GET /feed/{TOKEN}%2fx", "GET /feed/<redacted>%2fx"),
+        (f"GET /feed%2F{TOKEN}/x", "GET /feed/<redacted>/x"),
+        (f"GET /feed//{TOKEN}/", "GET /feed/<redacted>/"),
+        (f"GET //feed///{TOKEN}/x", "GET /feed/<redacted>/x"),
+        (f"bad value {TOKEN} elsewhere", "bad value <redacted> elsewhere"),
+        ("GET /feed/other-seg/x", "GET /feed/<redacted>/x"),
+    ],
+)
+def test_gunicorn_error_log_is_redacted(client, caplog, message, expected):
     gunicorn_error = logging.getLogger("gunicorn.error")
     gunicorn_error.setLevel(logging.INFO)
     caplog.set_level(logging.INFO, logger="gunicorn.error")
-    gunicorn_error.error("Error handling request %s", f"/feed/{TOKEN}/feed.xml")
-    gunicorn_error.error(f"Invalid request /feed/{TOKEN}/episodes/x.mp3 here")
+    gunicorn_error.error("Error handling request %s", message)
+    gunicorn_error.error(message)
     assert TOKEN not in caplog.text
-    assert "/feed/<redacted>/feed.xml" in caplog.text
-    assert "/feed/<redacted>/episodes/x.mp3 here" in caplog.text
+    assert caplog.text.count(expected) == 2
+
+
+def test_gunicorn_error_log_redacts_the_encoded_token(caplog):
+    from urllib.parse import quote
+
+    from linkcast.app import Config, create_app
+    from linkcast.storage import AudioStorage
+
+    token = "a b/c+d" + "x" * 30
+    create_app(Config(feed_token=token, audio_bucket="b"), AudioStorage(None, "test/"))
+    gunicorn_error = logging.getLogger("gunicorn.error")
+    caplog.set_level(logging.INFO, logger="gunicorn.error")
+    gunicorn_error.error("seen %s and %s", token, quote(token, safe=""))
+    assert token not in caplog.text and quote(token, safe="") not in caplog.text
+
+
+def test_token_prefix_extension_and_case_change_give_the_same_404(client):
+    reference = client.get("/nothing-here")
+    for wrong in (TOKEN[:-1], TOKEN + "t", TOKEN[:-1] + "T", TOKEN.upper()):
+        for suffix in ("feed.xml", "episodes/test-episode.mp3"):
+            response = client.get(f"/feed/{wrong}/{suffix}")
+            assert response.status_code == 404
+            assert response.data == reference.data
+            assert dict(response.headers) == dict(reference.headers)

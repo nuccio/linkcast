@@ -151,6 +151,9 @@ def test_identifier_check_fails_on_real_looking_values():
         "--set-env-vars=AUDIO_BUCKET=my-real-bucket,AUDIO_PREFIX=test/\n"
         "gcloud projects add-iam-policy-binding linkcast-123456 --member=x\n"
         "curl https://linkcast-abc123-ew.a.run.app/feed/abc/feed.xml\n"
+        "gcloud storage cp x gs://my-real-bucket/test/x.mp3\n"
+        "linkcast-run@linkcast-123456.iam.gserviceaccount.com\n"
+        "gcloud run deploy --project=linkcast-123456\n"
     )
     problems = identifier_problems(sample)
     for expected in (
@@ -160,6 +163,9 @@ def test_identifier_check_fails_on_real_looking_values():
         "project binding: linkcast-123456",
         "service address",
         "feed token: abc",
+        "bucket: my-real-bucket",
+        "service account: linkcast-123456",
+        "--project: linkcast-123456",
     ):
         assert expected in problems, expected
 

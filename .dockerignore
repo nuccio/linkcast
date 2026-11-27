@@ -12,5 +12,8 @@ docs
 infra
 *.md
 client_secret*.json
+**/client_secret*.json
 credentials.json
+**/credentials.json
 *-key.json
+**/*-key.json

@@ -1,7 +1,7 @@
 # Runs on every pull request, on every push to main, and on demand.
 # Required checks (see docs/maintainer-agent-workflow.md, "Repository
-# configuration"): "Repository checks". The issue that adds the application
-# code adds its jobs here and to that list.
+# configuration"): "Repository checks" and "Service tests". A new job is added
+# here and to that list.
 #
 # Actions are pinned to full commit SHAs; the comment next to each one is the
 # version it corresponds to. Only GitHub-owned actions are used.
