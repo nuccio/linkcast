@@ -11,3 +11,6 @@ tests
 docs
 infra
 *.md
+client_secret*.json
+credentials.json
+*-key.json

@@ -60,6 +60,17 @@ gcloud services enable run.googleapis.com firestore.googleapis.com \
 
 Expected: `Operation "operations/..." finished successfully.` Cloud Storage and Logging are already enabled. Do not enable Cloud Translation or Text-to-Speech: they are not part of #1.
 
+### Keep Cloud Trace off
+
+Cloud Run trace spans carry the request URL, and so the feed token. Before the deploy, check that Cloud Trace is not enabled and disable it if it is:
+
+```bash
+gcloud services list --enabled --filter=cloudtrace.googleapis.com
+gcloud services disable cloudtrace.googleapis.com
+```
+
+Run the second command only if the first one lists the API. Expected after that: the first command prints nothing.
+
 ## Step 3: Logging exclusion for the request log
 
 Cloud Run's automatic request log records the full address, and so the token. Exclude it now, before the service exists.
@@ -227,11 +238,19 @@ curl -s -o /dev/null -w '%{http_code}\n' "$SERVICE_URL/episodes/test-episode.mp3
 
 Expected output, in order: `200`, `206`, then `404` five times. If a result differs, stop: the first two failing means the deploy or the bucket access is wrong; a 200 or 206 where a 404 is expected is a bug in the service, to be fixed in the final PR before merging.
 
+Check that Cloud Trace is still off (the deploy must not have turned it on):
+
+```bash
+gcloud services list --enabled --filter=cloudtrace.googleapis.com
+```
+
+Expected: empty output.
+
 Also check that the request log is not recording the token: in Logging, the log `run.googleapis.com/requests` of the service `linkcast` must show no new entries for these requests.
 
 ## Step 12: Castamatic test (PA16)
 
-Done on the iPhone. The full address is `<SERVICE_URL>/feed/<FEED_TOKEN>/feed.xml`; send it to the phone by a private channel you trust and do not post it anywhere.
+Done on the iPhone. The full address is `<SERVICE_URL>/feed/<FEED_TOKEN>/feed.xml`; send it to the phone by a private channel you trust and do not post it anywhere. Do not send it through apps that fetch link previews on their servers.
 
 1. **Subscribe with the token in the address.** In Castamatic add a podcast by address and paste the full address. Expected: the show "LinkCast (test)" appears with one episode.
 2. **Download with the same token.** Download the test episode and play it to the end. Expected: it downloads and plays; the service's log shows `episode` requests answered 200 or 206.
@@ -309,4 +328,4 @@ gcloud projects remove-iam-policy-binding <PROJECT_ID> \
 gcloud iam service-accounts delete linkcast-run@<PROJECT_ID>.iam.gserviceaccount.com
 ```
 
-Then in the console: delete the Logging exclusion `linkcast-request-log` from the `_Default` sink, delete the budget, and optionally disable the APIs enabled in step 2. Each command asks for confirmation. The bucket and secret bindings disappear with the bucket and the secret.
+Then in the console: delete the Logging exclusion `linkcast-request-log` from the `_Default` sink, delete the budget, and optionally disable the APIs enabled in step 2 (Cloud Trace must stay off). Each command asks for confirmation. The bucket and secret bindings disappear with the bucket and the secret.

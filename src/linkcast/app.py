@@ -51,6 +51,25 @@ def _not_found() -> Response:
     return Response("Not Found\n", status=404, mimetype="text/plain")
 
 
+_FEED_SEGMENT = re.compile(r"/feed/[^/\s'\"?]+/")
+
+
+def _redact(value):
+    return _FEED_SEGMENT.sub("/feed/<redacted>/", value) if isinstance(value, str) else value
+
+
+class RedactFeedPath(logging.Filter):
+    """Replace the segment after ``/feed/`` in a log record, message and arguments."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg = _redact(record.msg)
+        if isinstance(record.args, tuple):
+            record.args = tuple(_redact(a) for a in record.args)
+        elif isinstance(record.args, dict):
+            record.args = {k: _redact(v) for k, v in record.args.items()}
+        return True
+
+
 class _App(Flask):
     """Flask whose error log never contains the request path (it holds the token)."""
 
@@ -77,7 +96,13 @@ def create_app(config: Config | None = None, storage: AudioStorage | None = None
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
 
+    gunicorn_error = logging.getLogger("gunicorn.error")
+    if not any(isinstance(f, RedactFeedPath) for f in gunicorn_error.filters):
+        gunicorn_error.addFilter(RedactFeedPath())
+
     app = _App(__name__, static_folder=None)
+    # No redirect for a doubled slash: it would answer before the token check.
+    app.url_map.merge_slashes = False
 
     def authorized(token: str) -> bool:
         return token_matches(token, config.feed_token)
