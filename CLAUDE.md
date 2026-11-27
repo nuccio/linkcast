@@ -1,6 +1,6 @@
 # linkcast
 
-Turns links to articles, mostly in English, into a private podcast feed: the text of each article is extracted, translated into Italian and read by a synthetic voice, one episode per article. Planned stack: Python on Cloud Run, Firebase (Firestore) for the data, Cloud Storage for the MP3 files, Cloud Translation and Cloud Text-to-Speech, all on a personal GCP project. The repository has no application code yet: the backlog is in the issues, with the milestones `MVP` and `Release 1`.
+Turns links to articles, mostly in English, into a private podcast feed: the text of each article is extracted, translated into Italian and read by a synthetic voice, one episode per article. Planned stack: Python on Cloud Run, Firebase (Firestore) for the data, Cloud Storage for the MP3 files, Cloud Translation and Cloud Text-to-Speech, all on a personal GCP project. The repository holds the first piece of application code, the feed service (see `README.md`); the backlog is in the issues, with the milestones `MVP` and `Release 1`.
 
 ## Language
 
@@ -10,16 +10,23 @@ Turns links to articles, mostly in English, into a private podcast feed: the tex
 ## Commands
 
 ```bash
-python3 -m pip install pytest             # test dependencies
+python3 -m pip install pytest             # test dependencies of the repository checks
 python3 -m pytest tests                   # repository checks, from the repository root
+uv sync --frozen                          # service dependencies from uv.lock (Python 3.13)
+uv run pytest tests/app                   # service tests, from the repository root
 ```
 
-The issue that adds the application code adds its commands here (install, run, tests, lint), together with the jobs in `.github/workflows/tests.yml`.
+The service runs in the container built from `Dockerfile` (gunicorn, `linkcast.app:create_app()`); it needs `FEED_TOKEN` and `AUDIO_BUCKET`, see `.env.example`. Sessions never run it against the real GCP project. The jobs in `.github/workflows/tests.yml` are `Repository checks` (`python -m pytest tests`) and `Service tests` (`uv sync --frozen`, `uv run pytest tests/app`). No linter yet.
 
 ## Layout
 
-- `tests/`: repository checks; `test_repository_language.py` enforces the English-only rule, `test_workflow_doc.py` checks the internal links of the workflow document and that the no-design rule and the complete-input rule are in it and in this file.
+- `src/linkcast/`: the feed service: `app.py` (routes, configuration, request log), `token.py` (feed token check), `storage.py` (reads the bucket), `feed.py` (RSS).
+- `tests/app/`: tests of the service, run with `uv run pytest tests/app`.
+- `tests/`: repository checks, `test_infra_runbook.py` checks that the twelve steps of `infra/setup.md` are present and in order, that the internal links of it and of `docs/gcp-project.md` resolve, and that neither holds a project id, bucket name, service address or token; `test_repository_language.py` enforces the English-only rule, `test_workflow_doc.py` checks the internal links of the workflow document and that the no-design rule and the complete-input rule are in it and in this file.
 - `docs/maintainer-agent-workflow.md`: the rules of the maintainer's Claude sessions.
+- `infra/`: the runbook `setup.md` (run by the maintainer by hand, never by a session) and the test MP3.
+- `docs/gcp-project.md`: the GCP project and what the runbook creates; `docs/diagrams/`: diagrams of the designs.
+- `Dockerfile`, `.dockerignore`, `pyproject.toml`, `uv.lock`, `.env.example`: container and dependencies of the service.
 - `.github/`: CI (`workflows/tests.yml`), Dependabot, `CODEOWNERS`.
 
 ## Rules that matter

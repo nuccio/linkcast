@@ -25,12 +25,22 @@ python3 -m pip install pytest
 python3 -m pytest tests
 ```
 
-The repository has no application code yet. The issue that adds it adds its setup here. Credentials for the GCP project are never committed.
+The feed service needs [uv](https://docs.astral.sh/uv/) and Python 3.13:
+
+```bash
+uv sync --frozen
+```
+
+```bash
+uv run pytest tests/app
+```
+
+The service tests need no network and no GCP login. Credentials for the GCP project are never committed.
 
 ## Making a change
 
 1. Create a branch from `main`, one per issue, e.g. `fix/feed-token-check` or `issue-14-daily-limit`.
-2. Add or update tests with the change. `python3 -m pytest tests` must pass.
+2. Add or update tests with the change. `python3 -m pytest tests` and `uv run pytest tests/app` must pass.
 3. Update the docs (`README.md`) when behaviour or configuration changes.
 4. If you change dependencies, update the lock file.
 5. Open a pull request against `main`. Put `Fixes #N` in the description, so the issue is closed when the pull request is merged.
