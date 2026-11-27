@@ -1,0 +1,21 @@
+[project]
+name = "linkcast"
+version = "0.1.0"
+description = "Private podcast feed service for LinkCast"
+requires-python = ">=3.13"
+dependencies = [
+    "flask",
+    "gunicorn",
+    "google-cloud-storage",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
