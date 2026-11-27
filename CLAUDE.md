@@ -22,7 +22,7 @@ The service runs in the container built from `Dockerfile` (gunicorn, `linkcast.a
 
 - `src/linkcast/`: the feed service: `app.py` (routes, configuration, request log), `token.py` (feed token check), `storage.py` (reads the bucket), `feed.py` (RSS).
 - `tests/app/`: tests of the service, run with `uv run pytest tests/app`.
-- `tests/`: repository checks, `test_infra_runbook.py` among them; `test_repository_language.py` enforces the English-only rule, `test_workflow_doc.py` checks the internal links of the workflow document and that the no-design rule and the complete-input rule are in it and in this file.
+- `tests/`: repository checks, `test_infra_runbook.py` checks that the twelve steps of `infra/setup.md` are present and in order, that the internal links of it and of `docs/gcp-project.md` resolve, and that neither holds a project id, bucket name, service address or token; `test_repository_language.py` enforces the English-only rule, `test_workflow_doc.py` checks the internal links of the workflow document and that the no-design rule and the complete-input rule are in it and in this file.
 - `docs/maintainer-agent-workflow.md`: the rules of the maintainer's Claude sessions.
 - `infra/`: the runbook `setup.md` (run by the maintainer by hand, never by a session) and the test MP3.
 - `docs/gcp-project.md`: the GCP project and what the runbook creates; `docs/diagrams/`: diagrams of the designs.

@@ -12,7 +12,7 @@ The maintainer creates these resources by hand, following [`infra/setup.md`](../
 | Resource | Purpose |
 |---|---|
 | Budget, $5 per month | Alerts at 50%, 90%, 100% of actual and 100% of forecast spending; it only warns |
-| APIs: Cloud Run, Firestore, Secret Manager, Artifact Registry | Needed by the resources below. Cloud Trace stays off: trace spans carry the request URL |
+| APIs: Cloud Run, Firestore, Secret Manager, Artifact Registry | Needed by the resources below. Cloud Trace stays off: trace spans carry the request URL. The runbook checks before the deploy and in the final checks that the API is disabled, and disables it if it is enabled |
 | Logging exclusion for the request log of the service `linkcast` | Keeps the feed token out of the logs |
 | Service account `linkcast-run` | The only identity of the service |
 | Private Cloud Storage bucket | Holds the test MP3 under `test/` |
@@ -21,7 +21,7 @@ The maintainer creates these resources by hand, following [`infra/setup.md`](../
 | Artifact Registry repository `linkcast`, keeping the last 2 images | Holds the container image |
 | Cloud Run service `linkcast` | Serves the feed and the MP3 files, only with the right token |
 
-IAM roles: `roles/storage.objectViewer` on the bucket, `roles/secretmanager.secretAccessor` on the secret and `roles/datastore.user` on the project, all for `linkcast-run`; `roles/run.invoker` for `allUsers` on the service only. No service account key is created.
+IAM roles: `roles/storage.objectViewer` on the bucket, `roles/secretmanager.secretAccessor` on the secret and `roles/datastore.user` on the project (optional: not used by #1, the maintainer may skip it and grant it with #3 or #4), all for `linkcast-run`; `roles/run.invoker` for `allUsers` on the service only. No service account key is created.
 
 Cloud Translation and Text-to-Speech are not enabled by #1. The runbook ends with the Castamatic test and a teardown section that removes everything.
 

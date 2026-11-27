@@ -350,7 +350,7 @@ First group, under the conditions of the [protected areas](#rules) rule:
 
 Paths of the first group named by an approved design (added by the final PR of #1):
 
-- `src/linkcast/token.py`, `tests/app/test_token.py`, `tests/app/test_routes.py`: the check of the feed token and the tests that enforce it;
+- `src/linkcast/token.py`, `src/linkcast/app.py`, `src/linkcast/feed.py`, `tests/app/test_token.py`, `tests/app/test_routes.py`, `tests/app/test_feed.py`: the check of the feed token, the redaction of the logs, and the tests that enforce them;
 - `src/linkcast/storage.py`, `tests/app/test_storage.py`: the code that reads Cloud Storage;
 - `infra/`, `Dockerfile`, `.dockerignore`: the runbook and the container;
 - `pyproject.toml`, `uv.lock`, `.env.example`: dependencies and configuration template.
