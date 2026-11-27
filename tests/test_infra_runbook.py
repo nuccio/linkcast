@@ -166,7 +166,7 @@ def test_identifier_check_fails_on_real_looking_values():
 
 def test_token_like_check_catches_a_token():
     sample = "token K3j9dLq2Xv8mN1pR5tYw7zA4cB6eF0hG_iU-oS"
-    assert re.search(r"[A-Za-z0-9_-]{32,}", sample)
+    assert "token-like string" in identifier_problems(sample)
 
 
 def test_test_episode_is_a_short_small_mp3():

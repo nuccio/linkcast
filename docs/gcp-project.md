@@ -12,7 +12,7 @@ The maintainer creates these resources by hand, following [`infra/setup.md`](../
 | Resource | Purpose |
 |---|---|
 | Budget, $5 per month | Alerts at 50%, 90%, 100% of actual and 100% of forecast spending; it only warns |
-| APIs: Cloud Run, Firestore, Secret Manager, Artifact Registry | Needed by the resources below |
+| APIs: Cloud Run, Firestore, Secret Manager, Artifact Registry | Needed by the resources below. Cloud Trace stays off: trace spans carry the request URL |
 | Logging exclusion for the request log of the service `linkcast` | Keeps the feed token out of the logs |
 | Service account `linkcast-run` | The only identity of the service |
 | Private Cloud Storage bucket | Holds the test MP3 under `test/` |

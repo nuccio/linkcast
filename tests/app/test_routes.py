@@ -83,12 +83,19 @@ def test_missing_episode_is_404(client):
         f"/feed/{TOKEN}/episodes/..%2Ftest-episode.mp3",
         "/robots.txt",
         "/static/x",
+        "/feed/wrong-token//feed.xml",
+        "/feed//wrong-token/feed.xml",
+        "/feed/wrong-token/episodes//test-episode.mp3",
+        f"/feed/{TOKEN}//feed.xml",
+        f"/feed//{TOKEN}/feed.xml",
+        f"/feed/{TOKEN}/episodes//test-episode.mp3",
     ],
 )
 def test_every_other_address_gives_the_same_404(client, path):
     reference = client.get("/nothing-here")
     response = client.get(path)
     assert response.status_code == 404
+    assert "Location" not in response.headers
     assert response.data == reference.data
     assert dict(response.headers) == dict(reference.headers)
 
@@ -216,3 +223,14 @@ def test_head_on_a_wrong_address_gives_the_same_404_headers(client, path):
     response = client.head(path)
     assert response.status_code == 404
     assert dict(response.headers) == dict(reference.headers)
+
+
+def test_gunicorn_error_log_is_redacted(client, caplog):
+    gunicorn_error = logging.getLogger("gunicorn.error")
+    gunicorn_error.setLevel(logging.INFO)
+    caplog.set_level(logging.INFO, logger="gunicorn.error")
+    gunicorn_error.error("Error handling request %s", f"/feed/{TOKEN}/feed.xml")
+    gunicorn_error.error(f"Invalid request /feed/{TOKEN}/episodes/x.mp3 here")
+    assert TOKEN not in caplog.text
+    assert "/feed/<redacted>/feed.xml" in caplog.text
+    assert "/feed/<redacted>/episodes/x.mp3 here" in caplog.text
