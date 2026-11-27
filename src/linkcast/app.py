@@ -5,6 +5,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
+from urllib.parse import quote
 
 from flask import Flask, Response, request
 
@@ -51,22 +52,38 @@ def _not_found() -> Response:
     return Response("Not Found\n", status=404, mimetype="text/plain")
 
 
-_FEED_SEGMENT = re.compile(r"/feed/[^/\s'\"?]+/")
-
-
-def _redact(value):
-    return _FEED_SEGMENT.sub("/feed/<redacted>/", value) if isinstance(value, str) else value
+# "/feed/<segment>" with repeated slashes, an encoded slash and any case; the
+# segment ends at a slash, an encoded slash, a quote, a space or a query.
+_FEED_SEGMENT = re.compile(
+    r"/+feed(?:/|%2f)+(?:(?!%2f)[^/\s'\"?])+",
+    re.IGNORECASE,
+)
 
 
 class RedactFeedPath(logging.Filter):
-    """Replace the segment after ``/feed/`` in a log record, message and arguments."""
+    """Redact the feed token in a log record, message and arguments.
+
+    The literal token (plain and percent-encoded) is replaced wherever it is,
+    and so is the segment after ``/feed/`` whatever it holds.
+    """
+
+    def __init__(self, token: str = ""):
+        super().__init__()
+        self._literals = [t for t in {token, quote(token, safe="")} if t]
+
+    def _redact(self, value):
+        if not isinstance(value, str):
+            return value
+        for literal in self._literals:
+            value = value.replace(literal, "<redacted>")
+        return _FEED_SEGMENT.sub("/feed/<redacted>", value)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.msg = _redact(record.msg)
+        record.msg = self._redact(record.msg)
         if isinstance(record.args, tuple):
-            record.args = tuple(_redact(a) for a in record.args)
+            record.args = tuple(self._redact(a) for a in record.args)
         elif isinstance(record.args, dict):
-            record.args = {k: _redact(v) for k, v in record.args.items()}
+            record.args = {k: self._redact(v) for k, v in record.args.items()}
         return True
 
 
@@ -97,8 +114,9 @@ def create_app(config: Config | None = None, storage: AudioStorage | None = None
         logger.setLevel(logging.INFO)
 
     gunicorn_error = logging.getLogger("gunicorn.error")
-    if not any(isinstance(f, RedactFeedPath) for f in gunicorn_error.filters):
-        gunicorn_error.addFilter(RedactFeedPath())
+    for old in [f for f in gunicorn_error.filters if isinstance(f, RedactFeedPath)]:
+        gunicorn_error.removeFilter(old)
+    gunicorn_error.addFilter(RedactFeedPath(config.feed_token))
 
     app = _App(__name__, static_folder=None)
     # No redirect for a doubled slash: it would answer before the token check.

@@ -49,3 +49,12 @@ def test_config_defaults_and_values():
 def test_config_requires_a_bucket():
     with pytest.raises(ValueError):
         Config.from_env({"FEED_TOKEN": "x" * 32})
+
+
+def test_prefix_extension_and_case_change_do_not_match():
+    expected = "AbCdEf" * 7
+    assert token_matches(expected, expected)
+    assert not token_matches(expected[:-1], expected)
+    assert not token_matches(expected + "x", expected)
+    assert not token_matches(expected.lower(), expected)
+    assert not token_matches(expected.swapcase(), expected)
