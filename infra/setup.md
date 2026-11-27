@@ -149,7 +149,7 @@ gcloud artifacts repositories create linkcast \
   --repository-format=docker --location=europe-west1
 ```
 
-Expected: `Created repository [linkcast].` Now add a cleanup policy that keeps the last 2 images. Save this as `cleanup.json` in Cloud Shell (outside the repository):
+Expected: `Created repository [linkcast].` Now add a cleanup policy that keeps the last 2 images. A `Keep` policy alone deletes nothing, so the file has a `Delete` policy for everything else next to it. Save this as `~/cleanup.json` in Cloud Shell (your home directory, outside the repository):
 
 ```json
 [
@@ -157,16 +157,21 @@ Expected: `Created repository [linkcast].` Now add a cleanup policy that keeps t
     "name": "keep-last-2",
     "action": {"type": "Keep"},
     "mostRecentVersions": {"keepCount": 2}
+  },
+  {
+    "name": "delete-others",
+    "action": {"type": "Delete"},
+    "condition": {"tagState": "any"}
   }
 ]
 ```
 
 ```bash
 gcloud artifacts repositories set-cleanup-policies linkcast \
-  --location=europe-west1 --policy=cleanup.json --no-dry-run
+  --location=europe-west1 --policy="$HOME/cleanup.json" --no-dry-run
 ```
 
-Expected: the policy is set on the repository. Then build and push the image with Docker in Cloud Shell (it uses your own login and adds no IAM):
+Expected: the command prints the two policies (`keep-last-2` and `delete-others`) now set on the repository; any image beyond the 2 most recent is deleted. Then build and push the image with Docker in Cloud Shell (it uses your own login and adds no IAM):
 
 ```bash
 gcloud auth configure-docker europe-west1-docker.pkg.dev
@@ -216,10 +221,11 @@ curl -s -o /dev/null -w '%{http_code}\n' "$SERVICE_URL/feed/wrong-token/episodes
 
 # No token: 404 for both
 curl -s -o /dev/null -w '%{http_code}\n' "$SERVICE_URL/feed/feed.xml"
+curl -s -o /dev/null -w '%{http_code}\n' "$SERVICE_URL/feed//feed.xml"
 curl -s -o /dev/null -w '%{http_code}\n' "$SERVICE_URL/episodes/test-episode.mp3"
 ```
 
-Expected output, in order: `200`, `206`, `404`, `404`, `404`, `404`. If a result differs, stop: the first two failing means the deploy or the bucket access is wrong; a 200 or 206 where a 404 is expected is a bug in the service, to be fixed in the final PR before merging.
+Expected output, in order: `200`, `206`, then `404` five times. If a result differs, stop: the first two failing means the deploy or the bucket access is wrong; a 200 or 206 where a 404 is expected is a bug in the service, to be fixed in the final PR before merging.
 
 Also check that the request log is not recording the token: in Logging, the log `run.googleapis.com/requests` of the service `linkcast` must show no new entries for these requests.
 
@@ -275,7 +281,11 @@ gcloud run services update linkcast --region=europe-west1 \
   --set-secrets=FEED_TOKEN=feed-token:latest
 ```
 
-Expected: `Created version [2] of the secret [feed-token].` and a new revision serving 100 percent of traffic.
+Expected: `Created version [2] of the secret [feed-token].` and a new revision serving 100 percent of traffic. Before running the checks of step 11 again, read the new token into the shell variable (the old value no longer works):
+
+```bash
+FEED_TOKEN=$(gcloud secrets versions access latest --secret=feed-token)
+```
 
 ## Teardown
 
@@ -287,7 +297,16 @@ gcloud artifacts repositories delete linkcast --location=europe-west1
 gcloud secrets delete feed-token
 gcloud storage rm --recursive gs://<BUCKET_NAME>
 gcloud firestore databases delete --database='(default)'
+```
+
+Before the service account is deleted, remove its project-level binding (the deletion does not remove it, and it would stay in the policy as a deleted account):
+
+```bash
+gcloud projects remove-iam-policy-binding <PROJECT_ID> \
+  --member="serviceAccount:linkcast-run@<PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/datastore.user" --condition=None
+
 gcloud iam service-accounts delete linkcast-run@<PROJECT_ID>.iam.gserviceaccount.com
 ```
 
-Then in the console: delete the Logging exclusion `linkcast-request-log` from the `_Default` sink, delete the budget, and optionally disable the APIs enabled in step 2. Each command asks for confirmation. The IAM bindings disappear with the bucket, the secret and the service account; remove the `roles/datastore.user` binding of the deleted account from the project policy if it is still listed.
+Then in the console: delete the Logging exclusion `linkcast-request-log` from the `_Default` sink, delete the budget, and optionally disable the APIs enabled in step 2. Each command asks for confirmation. The bucket and secret bindings disappear with the bucket and the secret.

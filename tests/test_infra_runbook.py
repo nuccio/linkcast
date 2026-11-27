@@ -85,7 +85,7 @@ def test_design_choices_are_stated():
 
 def test_checks_expect_the_right_statuses():
     body = text(RUNBOOK)
-    assert "`200`, `206`, `404`, `404`, `404`, `404`" in body
+    assert "`200`, `206`, then `404` five times" in body
 
 
 def test_internal_links_are_valid():
@@ -109,27 +109,59 @@ def test_placeholders_only():
     assert "<PROJECT_ID>" in used and "<BUCKET_NAME>" in used
 
 
+def identifier_problems(body: str) -> list[str]:
+    """Return one line per value that should be a placeholder but is not."""
+    problems = []
+    if re.search(r"run\.app\b", body):
+        problems.append("service address")
+    patterns = {
+        "service account": (r"@([\w.-]+)\.iam\.gserviceaccount\.com", "<PROJECT_ID>"),
+        "bucket": (r"gs://([^\s/]+)", "<BUCKET_NAME>"),
+        "AUDIO_BUCKET": (r"AUDIO_BUCKET=([^\s,]+)", "<BUCKET_NAME>"),
+        "--project": (r"--project[= ](\S+)", "<PROJECT_ID>"),
+        "config project": (r"config set project (\S+)", "<PROJECT_ID>"),
+        "image path": (r"-docker\.pkg\.dev/([^/\s]+)/", "<PROJECT_ID>"),
+        "project binding": (
+            r"projects (?:add|remove)-iam-policy-binding (\S+)",
+            "<PROJECT_ID>",
+        ),
+    }
+    for name, (pattern, placeholder) in patterns.items():
+        for match in re.findall(pattern, body):
+            if match != placeholder:
+                problems.append(f"{name}: {match}")
+    for match in re.findall(r"/feed/([^/\s\"]*)/", body):
+        if match not in {"<FEED_TOKEN>", "$FEED_TOKEN", "wrong-token", ""}:
+            problems.append(f"feed token: {match}")
+    stripped = re.sub(r"https?://\S+", "", body)
+    if re.search(r"[A-Za-z0-9_-]{32,}", stripped):
+        problems.append("token-like string")
+    return problems
+
+
 def test_no_identifiers_or_tokens():
     for path in (RUNBOOK, GCP_DOC):
-        body = text(path)
-        # Service addresses
-        assert not re.search(r"[a-z0-9-]+\.a\.run\.app", body), path
-        assert not re.search(r"run\.app\b", body), path
-        # Service account addresses must use the placeholder
-        for match in re.findall(r"@([\w.-]+)\.iam\.gserviceaccount\.com", body):
-            assert match == "<PROJECT_ID>", (path, match)
-        # Real project ids and bucket names appear only as placeholders
-        for match in re.findall(r"gs://([^\s/]+)", body):
-            assert match == "<BUCKET_NAME>", (path, match)
-        for match in re.findall(r"--project[= ](\S+)", body):
-            assert match == "<PROJECT_ID>", (path, match)
-        for match in re.findall(r"/feed/([^/\s\"]+)/", body):
-            assert match in {"<FEED_TOKEN>", "$FEED_TOKEN", "wrong-token"}, (
-                path,
-                match,
-            )
-        # Token-like strings: 32 or more URL-safe characters in a row
-        assert not re.search(r"[A-Za-z0-9_-]{32,}", re.sub(r"https?://\S+", "", body)), path
+        assert identifier_problems(text(path)) == [], path
+
+
+def test_identifier_check_fails_on_real_looking_values():
+    sample = (
+        "gcloud config set project linkcast-123456\n"
+        "docker push europe-west1-docker.pkg.dev/linkcast-123456/linkcast/x:v1\n"
+        "--set-env-vars=AUDIO_BUCKET=my-real-bucket,AUDIO_PREFIX=test/\n"
+        "gcloud projects add-iam-policy-binding linkcast-123456 --member=x\n"
+        "curl https://linkcast-abc123-ew.a.run.app/feed/abc/feed.xml\n"
+    )
+    problems = identifier_problems(sample)
+    for expected in (
+        "config project: linkcast-123456",
+        "image path: linkcast-123456",
+        "AUDIO_BUCKET: my-real-bucket",
+        "project binding: linkcast-123456",
+        "service address",
+        "feed token: abc",
+    ):
+        assert expected in problems, expected
 
 
 def test_token_like_check_catches_a_token():
