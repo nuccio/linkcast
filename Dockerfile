@@ -19,4 +19,5 @@ USER linkcast
 
 # Cloud Run sets PORT. The service refuses to start without a valid FEED_TOKEN.
 # No access log: it would contain the token (the service writes its own log).
-CMD exec gunicorn --bind "0.0.0.0:${PORT:-8080}" --workers 1 --threads 4 --timeout 120 "linkcast.app:create_app()"
+# The log level is explicit so that it cannot be raised to debug unnoticed.
+CMD exec gunicorn --log-level info --bind "0.0.0.0:${PORT:-8080}" --workers 1 --threads 4 --timeout 120 "linkcast.app:create_app()"

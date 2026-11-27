@@ -77,7 +77,7 @@ def create_app(config: Config | None = None, storage: AudioStorage | None = None
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
 
-    app = _App(__name__)
+    app = _App(__name__, static_folder=None)
 
     def authorized(token: str) -> bool:
         return token_matches(token, config.feed_token)

@@ -70,8 +70,8 @@ def test_missing_episode_is_404(client):
 @pytest.mark.parametrize(
     "path",
     [
-        f"/feed/wrong-token/feed.xml",
-        f"/feed/wrong-token/episodes/test-episode.mp3",
+        "/feed/wrong-token/feed.xml",
+        "/feed/wrong-token/episodes/test-episode.mp3",
         "/feed/feed.xml",
         "/feed//feed.xml",
         "/feed/episodes/test-episode.mp3",
@@ -82,6 +82,7 @@ def test_missing_episode_is_404(client):
         f"/feed/{TOKEN}/episodes/",
         f"/feed/{TOKEN}/episodes/..%2Ftest-episode.mp3",
         "/robots.txt",
+        "/static/x",
     ],
 )
 def test_every_other_address_gives_the_same_404(client, path):
@@ -92,7 +93,9 @@ def test_every_other_address_gives_the_same_404(client, path):
     assert dict(response.headers) == dict(reference.headers)
 
 
-@pytest.mark.parametrize("path", [FEED, EPISODE, f"/feed/wrong/feed.xml", "/nothing-here"])
+@pytest.mark.parametrize(
+    "path", [FEED, EPISODE, "/feed/wrong/feed.xml", "/nothing-here", "/static/x"]
+)
 @pytest.mark.parametrize("method", ["post", "put", "delete", "patch", "options"])
 def test_other_methods_give_the_same_404(client, path, method):
     reference = client.get("/nothing-here")
@@ -144,7 +147,7 @@ def test_log_line_survives_odd_user_agent(client, caplog):
     assert "\n" not in line and len(line) < 400
 
 
-def _client_with(bucket, storage_cls=None, **attrs):
+def _client_with(bucket, **attrs):
     from linkcast.app import Config, create_app
     from linkcast.storage import AudioStorage
 
@@ -193,3 +196,23 @@ def test_error_while_streaming_logs_no_path_or_token(bucket, caplog, monkeypatch
     response = client.get(EPISODE)
     _assert_clean(caplog, response)
     assert len(response.data) == 100
+
+
+def test_error_on_the_first_chunk_logs_no_path_or_token(bucket, caplog):
+    caplog.set_level(logging.INFO)
+
+    def broken(self, name, start, end):
+        raise RuntimeError(f"failure for /feed/{TOKEN}/episodes/{name}.mp3")
+
+    client = _client_with(bucket, read_range=broken)
+    response = client.get(EPISODE)
+    _assert_clean(caplog, response)
+    assert response.data == b""
+
+
+@pytest.mark.parametrize("path", ["/feed/wrong/feed.xml", "/nothing-here", "/static/x"])
+def test_head_on_a_wrong_address_gives_the_same_404_headers(client, path):
+    reference = client.get("/nothing-here")
+    response = client.head(path)
+    assert response.status_code == 404
+    assert dict(response.headers) == dict(reference.headers)
